@@ -52,6 +52,11 @@ for (var subdomain in domains) {
         }
     }
 
+    // Handle DS records
+    if (domainData.record.DS) {
+        commit.push(DS(subdomainName, domainData.record.DS.key_tag, domainData.record.DS.algorithm, domainData.record.DS.digest_type, domainData.record.DS.digest));
+    }
+
     // Handle MX records
     if (domainData.record.MX) {
         for (var mx in domainData.record.MX) {
@@ -87,27 +92,17 @@ for (var subdomain in domains) {
 
     // Handle URL records
     if (domainData.record.URL) {
-        commit.push(
-            A(subdomainName, "192.0.2.1", { cloudflare_proxy: "on" })
-            // CF_SINGLE_REDIRECT(fullSubdomain, 302, 'http.host eq "' + fullSubdomain + '"', 'concat("' + domainData.record.URL + '", "")')
-        )
+        commit.push(A(subdomainName, "192.0.2.1", { cloudflare_proxy: "on" }));
     }
 }
 
 // Exceptions
-commit.push(IGNORE("*", "DS"));
 commit.push(IGNORE("@", "MX,TXT"));
 commit.push(IGNORE("\\*"));
-commit.push(IGNORE("*._domainkey", "TXT"));
 commit.push(IGNORE("_acme-challenge", "TXT"));
-commit.push(IGNORE("_autodiscover._tcp", "SRV"));
 commit.push(IGNORE("_dmarc", "TXT"));
 commit.push(IGNORE("_psl", "TXT"));
-commit.push(IGNORE("autoconfig", "CNAME"));
-commit.push(IGNORE("autodiscover", "CNAME"));
 commit.push(IGNORE("ns[1-5]", "A,AAAA"));
-commit.push(IGNORE("test"));
-commit.push(IGNORE("**.test"));
 
 // Commit all DNS records
 D("is-a.dev", NewRegistrar("none"), DnsProvider(NewDnsProvider("cloudflare", { "manage_single_redirects": true })), commit);
